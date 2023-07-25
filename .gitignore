@@ -1,0 +1,5 @@
+dev.ipynb
+/__pycache__/
+settings.toml
+.env
+/.ipynb_checkpoints/
