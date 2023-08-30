@@ -1,4 +1,5 @@
 import itertools
+from dataclasses import fields, _process_class
 
 
 def _get_slots(cls):
@@ -64,7 +65,12 @@ def _add_slots(cls, is_frozen, weakref_slot):
 
     # And finally create the class.
     qualname = getattr(cls, "__qualname__", None)
-    cls = type(cls)(cls.__name__, cls.__bases__, cls_dict)
+    # NOTE: This would trigger another __new__ call, which leades to calling every function in the call stack
+    # cls = type(cls)(cls.__name__, cls.__bases__, cls_dict)
+    # chagned to:
+    # cls = type(cls).__base__(cls.__name__, cls.__bases__, cls_dict)
+    # does not work, since would call the __new__ of type, which we have not control over
+    cls = type(cls)(cls.__name__, cls.__bases__, cls_dict, _domino_subinit_hook=True)
     if qualname is not None:
         cls.__qualname__ = qualname
 
@@ -76,10 +82,21 @@ def _add_slots(cls, is_frozen, weakref_slot):
     return cls
 
 
-def create_slots_struct(raw_cls, cls_config):
+def create_slots_struct(raw_cls: type, cls_config: dict):
+    # BUG: _process_class for FrozenStruct would evoke another __new__ when slots=True
+    # and in the second time, kwargs would be None
+    # and it thus would no longer be frozen
     """
-    1. create a dataclass with slots be false
+    1. create a dataclass with slots being False
     2. create another dataclass with slots using previous dataclass
     3. return the new class
     """
-    return None
+
+    cls_config.update(slots=False)
+    dtc = _process_class(raw_cls, **cls_config)
+
+    slot_dtc = _add_slots(
+        dtc, is_frozen=cls_config["frozen"], weakref_slot=cls_config["weakref_slot"]
+    )
+
+    return slot_dtc

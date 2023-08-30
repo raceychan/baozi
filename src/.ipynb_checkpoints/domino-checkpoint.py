@@ -1,8 +1,8 @@
 import sys
 import typing
-from dataclasses import _process_class, MISSING, is_dataclass, FrozenInstanceError
+from dataclasses import _process_class, MISSING, is_dataclass
 
-from frozen import is_class_immutable, is_field_immutable
+from frozen import is_class_immutable
 from slots import create_slots_struct
 
 
@@ -14,18 +14,16 @@ DATACLASS_DEFAULT_KW = dict(
     unsafe_hash=False,
     frozen=False,
 )
-
-if sys.version_info.minor >= 11:
-    DATACLASS_DEFAULT_KW.update(weakref_slot=False)
-
 FIELDS_DEFAULT_KW = dict(
     match_args=True,
     kw_only=False,
     slots=False,
 )
 
-
 FIELDS_PARAMS = "__DOMINO_FIELD_PARAMS__"
+
+if sys.version_info.minor >= 11:
+    DATACLASS_DEFAULT_KW.update(weakref_slot=False)
 
 
 def read_slots(cls):
@@ -102,11 +100,7 @@ class MetaConfig:
 
 @typing.dataclass_transform(kw_only_default=True)
 class StructMeta(type):
-    def __new__(meta: "StructMeta", cls_name: str, bases: tuple, namespace: dict, _domino_subinit_hook: bool = False, **kwargs):  # type: ignore
-        if _domino_subinit_hook:
-            raw_cls = super().__new__(meta, cls_name, bases, namespace)
-            return raw_cls
-
+    def __new__(meta, cls_name, bases, namespace, **kwargs):  # type: ignore
         raw_cls = super().__new__(meta, cls_name, bases, namespace)
 
         base_m_params = dict()
@@ -115,6 +109,8 @@ class StructMeta(type):
             if is_dataclass(base):
                 base_m_params.update(get_dc_params(base))
                 base_f_params.update(getattr(base, FIELDS_PARAMS, {}))
+            # else:
+            #     raise Exception("Inherit from non-dataclass is not supported")
 
         config = namespace.get(MetaConfig, {})  # BUG: this currently does not work
 
@@ -127,12 +123,23 @@ class StructMeta(type):
             field_config |= field_params
 
         setattr(raw_cls, FIELDS_PARAMS, field_config)
+
         cls_config = model_config | field_config
 
+        # BUG: _process_class for FrozenStruct would evoke another __new__ when slots=True
+        # and in the second time, kwargs would be None
+        # and it thus would no longer be frozen
+
+        # NOTE: When you use __slots__ in a class, Python re-creates the class with the __slots__ attribute,
+        # and this results in the metaclass being called again.
+
+        # slots = getattr(raw_cls, "__slots__", MISSING)
+        # if slots is not MISSING:
+        #     delattr(raw_cls, "__slots__")
         if cls_config["slots"]:
-            cls_ = create_slots_struct(raw_cls, cls_config)
-        else:
-            cls_ = _process_class(raw_cls, **cls_config)
+            return create_slots_struct(raw_cls, cls_config)
+
+        cls_ = _process_class(raw_cls, **cls_config)
 
         if cls_config["frozen"] and not is_class_immutable(cls_):
             raise ImmutableFieldError
@@ -143,6 +150,9 @@ class StructMeta(type):
         if args:
             raise ArgumentError
 
+        # BUG here, when subclassing slots only dataclass
+        # TypeError: super(type, obj): obj must be an instance or subtype of type
+        # https://stackoverflow.com/questions/43751455/supertype-obj-obj-must-be-an-instance-or-subtype-of-type
         obj = super().__call__(**kwargs)
         return obj
 
@@ -151,9 +161,8 @@ class Struct(metaclass=StructMeta, kw_only=True):
     ...
 
     def but(self, **kw_attrs):
-        # TODO: return a new object with current attributes + kw_attrs
+        # TODO: return a new object with current attributes + kw_attrs 
         ...
-
 
 @typing.dataclass_transform(frozen_default=True)
 class FrozenStruct(metaclass=StructMeta, kw_only=True, frozen=True, slots=True):
