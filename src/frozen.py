@@ -1,5 +1,6 @@
 import typing
 import warnings
+from datetime import date, datetime
 
 IMMUTABLE_NONCONTAINER_TYPES = {
     int,
@@ -14,15 +15,18 @@ IMMUTABLE_NONCONTAINER_TYPES = {
     ...,  # Ellipsis is immutable
 }
 
+IMMUTABLE_CUSTOM_TYPES = {date, datetime}
+
+
 IMMUTABLE_CONTAINER_TYPES = {tuple, frozenset, typing.Union, typing.Literal}
 
 
 def is_field_immutable(field):
     # Base case: if this is a non-container type, it is immutable
     if field in IMMUTABLE_NONCONTAINER_TYPES:
-        # NOTE: .. should be consider immutable, eclipse always appears in a container type
-        # and indicates that there are several elements in the container of same type
-        # thus, if the type is mutable, it won't comes to eclipse in the first place.
+        return True
+
+    if field in IMMUTABLE_CUSTOM_TYPES:
         return True
 
     # Get the original type for types from the typing module
@@ -50,7 +54,7 @@ def is_class_immutable(cls):
     namespace = annotations.items()
     for attr_name, attr_type in namespace:
         if not is_field_immutable(attr_type):
-            warnings.warn(f"Attribute ({attr_name}, {attr_type}) of {cls} is mutable")
+            print(f"Attribute ({attr_name}, {attr_type}) of {cls} is mutable")
             return False
     return True
 

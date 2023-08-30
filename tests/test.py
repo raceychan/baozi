@@ -1,4 +1,10 @@
-from domino import Struct, FrozenInstanceError, FrozenStruct, is_field_immutable
+from domino import (
+    Struct,
+    FrozenInstanceError,
+    FrozenStruct,
+    is_field_immutable,
+    ImmutableFieldError,
+)
 
 if not is_field_immutable(tuple[str, ...]):
     raise Exception
@@ -68,10 +74,35 @@ def test_subclass_frozen():
 
 def test_frozen_immutable():
     wf = WF(name="wf", age=15, names=("a", "b", "c"))
+    assert wf.name == "wf" and wf.age == 15 and wf.names == ("a", "b", "c")
+
+
+def test_frozen_class_immutable():
+    try:
+
+        class Mutable(FrozenStruct):
+            address: list[str]
+
+    except ImmutableFieldError:
+        pass
+    else:
+        raise Exception("ImmutableFieldError not raised")
 
 
 def test_is_field_immutable(attr_type):
     return is_field_immutable(attr_type)
+
+
+def test_event():
+    from datetime import datetime
+    from dataclasses import field
+
+    class Event(FrozenStruct):
+        name: str
+        created_at: datetime = field(default_factory=datetime.now)
+
+    e = Event(name="event")
+    assert isinstance(e.created_at, datetime)
 
 
 def test():
@@ -80,6 +111,8 @@ def test():
     test_frozen()
     test_subclass_frozen()
     test_frozen_immutable()
+    test_event()
+    test_frozen_class_immutable()
 
 
 if __name__ == "__main__":

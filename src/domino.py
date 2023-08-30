@@ -1,6 +1,12 @@
 import sys
 import typing
-from dataclasses import _process_class, MISSING, is_dataclass, FrozenInstanceError
+from dataclasses import (
+    _process_class,
+    MISSING,
+    is_dataclass,
+    FrozenInstanceError,
+    field,
+)
 
 from frozen import is_class_immutable, is_field_immutable
 from slots import create_slots_struct
