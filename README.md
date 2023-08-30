@@ -1,5 +1,3 @@
-domino.ImmutableFieldError# Introduction
-
 # Introduction
 
 **domino is a thin wrapper around python's builtin dataclass, which offers extract features like:**
