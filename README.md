@@ -1,17 +1,40 @@
 domino.ImmutableFieldError# Introduction
 
-## Domino
+# Introduction
 
-domino is a thin wrapper around python's builtin dataclass, which offers extract features like:
+**domino is a thin wrapper around python's builtin dataclass, which offers extract features like:**
 
-1. inheritance
-2. immutability
-3. typecasting
-4. keyword-only arguments and random order attributes
+- inheritance
+- immutability
+- typecasting(experimental)
+- keyword-only arguments and random order attributes
+
+# Installation
+
+1. clone the source code to your chosen folder
+
+```bash
+mkdir domino && cd domino
+git clone git@github.com:raceychan/domino.git
+```
+
+2. install the source code from the folder
+
+```bash
+pip install -e .
+```
+
+3. import domino packages in your project
+
+```python
+from domino import Struct
+
+# Your Code
+```
 
 # Usage
 
-## Usage of plain Struct
+## 1. Usage of plain Struct
 
 ```python
 from domino import Struct
@@ -23,10 +46,12 @@ class Person(Struct, kw_only=True):
 p = Person(name="domino")
 ```
 
-> - note here that you can put attribute with default value before regular attributeo
-> - put dataclass configration directly in class inheritance
+> - note here that attribute with default value does not have to show before regular attributeo
+> - you might place dataclass configration directly in class inheritance
 
-## Usage of FrozenStruct
+## 2. Usage of FrozenStruct
+
+### Domino is fully compatible with dataclasses.dataclass
 
 ```python
 from domino import FrozenStruct, field
@@ -42,6 +67,10 @@ class Event(FrozenStruct):
 
 dataclasses.FrozenInstanceError: cannot assign to field 'created_at'
 ```
+
+### Defining FrozenStruct with mutable fields would raise error
+
+> since any mutable field would cause failure in immutability of the class
 
 ```python
 from domino import FrozenStruct
