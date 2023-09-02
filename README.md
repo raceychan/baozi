@@ -52,6 +52,14 @@ p = Person(name="domino")
 ### Domino is fully compatible with dataclasses.dataclass
 
 ```python
+from dataclass import is_dataclass
+from domino import FrozenStruct
+
+assert is_dataclass(FrozenStruct)
+```
+
+### FrozenStruct is equal to dataclass(frozen=True, slots=True, kw_only=True)
+```python
 from domino import FrozenStruct, field
 from datetime import datetime
 
