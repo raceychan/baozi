@@ -4,12 +4,13 @@ from dataclasses import (
     _process_class,
     MISSING,
     is_dataclass,
-    FrozenInstanceError,
-    field,
+    # field,
 )
 
-from frozen import is_class_immutable, is_field_immutable
+from frozen import is_class_immutable
 from slots import create_slots_struct
+from typecast import parse_config, read_env
+from error import ImmutableFieldError, ArgumentError
 
 
 DATACLASS_DEFAULT_KW = dict(
@@ -34,30 +35,8 @@ FIELDS_DEFAULT_KW = dict(
 FIELDS_PARAMS = "__DOMINO_FIELD_PARAMS__"
 
 
-def read_slots(cls):
-    slots = getattr(cls, "__slots__", ())
-    values = {k: getattr(cls, k) for k in slots} if slots else {}
-    return values
-
-
-class InvalidType(Exception):
-    def __init__(self, attr_name, type_) -> None:
-        self.attr_name = attr_name
-        self.type_ = type_
-
-    def __str__(self) -> str:
-        msg = f"Attribute {self.attr_name} of type {self.type_} is mutable"
-        return msg
-
-
-class ArgumentError(Exception):
-    def __str__(self):
-        msg = f"Positional arguments are not allowed"
-        return msg
-
-
-class ImmutableFieldError(Exception):
-    ...
+class SlotProtocol(typing.Protocol):
+    __slots__: tuple[str, ...]
 
 
 class _MISSING_DEFAULT:
@@ -65,6 +44,25 @@ class _MISSING_DEFAULT:
 
 
 MISSING_DEFAULT = _MISSING_DEFAULT()
+
+
+def read_slots(obj: SlotProtocol):
+    if not hasattr(obj, "__slots__"):
+        return dict()
+    slots = {key: getattr(obj, key) for key in obj.__slots__ if not key.startswith("_")}
+    return slots
+
+
+def pretty_repr(obj: SlotProtocol | type):
+    if hasattr(obj, "__slots__"):
+        lines = "".join(f"\t{key}={val}\n" for key, val in read_slots(obj).items())
+    else:
+        lines = "".join(
+            f"\t{key}={val}\n"
+            for key, val in obj.__dict__.items()
+            if not key.startswith("_")
+        )
+    return f"{obj.__class__.__name__}(\t\n{lines})"
 
 
 def get_dc_params(dataclass):
@@ -135,12 +133,16 @@ class StructMeta(type):
         setattr(raw_cls, FIELDS_PARAMS, field_config)
         cls_config = model_config | field_config
 
+        if "__repr__" in namespace:
+            cls_config["repr"] = False
+
         if cls_config["slots"]:
             cls_ = create_slots_struct(raw_cls, cls_config)
         else:
             cls_ = _process_class(raw_cls, **cls_config)
 
-        if cls_config["frozen"] and not is_class_immutable(cls_):
+        # TODO: extract imtypes from cls_config
+        if cls_config["frozen"] and not is_class_immutable(cls_, imtypes=[]):
             raise ImmutableFieldError
 
         return cls_
@@ -156,11 +158,21 @@ class StructMeta(type):
 class Struct(metaclass=StructMeta, kw_only=True):
     ...
 
-    def but(self, **kw_attrs):
-        # TODO: return a new object with current attributes + kw_attrs
-        ...
-
 
 @typing.dataclass_transform(frozen_default=True)
 class FrozenStruct(metaclass=StructMeta, kw_only=True, frozen=True, slots=True):
     ...
+
+    def but(self, **kw_attrs):
+        # TODO: return a new object with current attributes + kw_attrs
+        return self.__class__(*kw_attrs)
+
+
+class ConfigBase(FrozenStruct):  # type: ignore
+    def __repr__(self):
+        return pretty_repr(self)
+
+    @classmethod
+    def from_env(cls, filename=".env"):
+        parsed_result = parse_config(cls, read_env(filename=filename))
+        return cls(**parsed_result)

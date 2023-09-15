@@ -87,3 +87,5 @@ class PythonVersion:
     @property
     def is_py3(self):
         return self.major == 3
+
+

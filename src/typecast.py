@@ -1,4 +1,5 @@
-from typing import get_type_hints, Protocol, ClassVar
+from typing import get_type_hints, Protocol, ClassVar, Any
+from pathlib import Path
 
 
 class Dataclass(Protocol):
@@ -36,3 +37,47 @@ def parse_config(config: Dataclass, values: dict) -> dict:
         except ValueError as ve:
             raise TypeCoerceError(attr_name, attr_type)
     return config_dict
+
+
+def read_env(filename: str = ".env") -> dict[str, Any]:
+    file = Path(__file__).parent / filename
+    if not file.exists():
+        raise Exception(f"{filename} not found")
+
+    def parse(val: str):
+        if val[0] in {'"', "'"}:  # Removing quotes if they exist
+            if val[0] == val[-1]:
+                value = val[1:-1]
+            else:
+                raise ValueError(f"{val} inproperly quoted")
+
+        # Type casting
+        if val.isdecimal():
+            value = int(val)  # Integer type
+        elif val.lower() in {"true", "false"}:
+            value = val.lower() == "true"  # Boolean type
+        else:
+            if val[0].isdecimal():  # Float type
+                try:
+                    value = float(val)
+                except ValueError as ve:
+                    pass
+                else:
+                    return value
+            value = val  # Otherwise, string type
+        return value
+
+    config = {}
+    ln = 1
+
+    with file.open() as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#"):
+                try:
+                    key, value = line.split("=", 1)
+                    config[key.strip()] = parse(value.strip())
+                except ValueError as ve:
+                    raise ValueError(f"Invalid env line number {ln}: {line}") from ve
+            ln += 1
+    return config

@@ -26,7 +26,7 @@ def _dataclass_setstate(self, state):
         object.__setattr__(self, field.name, value)
 
 
-def _add_slots(cls, is_frozen, weakref_slot):
+def _add_slots(cls, is_frozen: bool, weakref_slot: bool):
     # Need to create a new class, since we can't set __slots__
     #  after a class has been created.
 
@@ -65,11 +65,14 @@ def _add_slots(cls, is_frozen, weakref_slot):
 
     # And finally create the class.
     qualname = getattr(cls, "__qualname__", None)
-    # NOTE: This would trigger another __new__ call, which leades to calling every function in the call stack
+
+    # NOTE(race): This would trigger another __new__ call, which leades to calling every function in the call stack
     # cls = type(cls)(cls.__name__, cls.__bases__, cls_dict)
     # chagned to:
     # cls = type(cls).__base__(cls.__name__, cls.__bases__, cls_dict)
     # does not work, since would call the __new__ of type, which we have not control over
+    # thus, we add a _domino_subinit_hook to the __new__ call, which will skip the repreated __new__ call
+
     cls = type(cls)(cls.__name__, cls.__bases__, cls_dict, _domino_subinit_hook=True)
     if qualname is not None:
         cls.__qualname__ = qualname
@@ -83,20 +86,14 @@ def _add_slots(cls, is_frozen, weakref_slot):
 
 
 def create_slots_struct(raw_cls: type, cls_config: dict):
-    # BUG: _process_class for FrozenStruct would evoke another __new__ when slots=True
-    # and in the second time, kwargs would be None
-    # and it thus would no longer be frozen
-    """
-    1. create a dataclass with slots being False
-    2. create another dataclass with slots using previous dataclass
-    3. return the new class
-    """
-
+    # create a dataclass with slots being False
     cls_config.update(slots=False)
     dtc = _process_class(raw_cls, **cls_config)
 
+    # create another dataclass with slots using previous dataclass
     slot_dtc = _add_slots(
         dtc, is_frozen=cls_config["frozen"], weakref_slot=cls_config["weakref_slot"]
     )
 
+    # return the new class with slots
     return slot_dtc
