@@ -1,0 +1,8 @@
+*.env
+*.so
+*.html
+*.db
+
+.ipynb_checkpoints
+.virtual_documents
+__pycache__/
