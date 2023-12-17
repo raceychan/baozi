@@ -1,17 +1,11 @@
 import sys
-import typing
-from dataclasses import (
-    _process_class,
-    MISSING,
-    is_dataclass,
-    # field,
-)
+import typing as ty
+from dataclasses import MISSING, _process_class, is_dataclass  # field,
 
+from error import ArgumentError, ImmutableFieldError
 from frozen import is_class_immutable
 from slots import create_slots_struct
 from typecast import parse_config, read_env
-from error import ImmutableFieldError, ArgumentError
-
 
 DATACLASS_DEFAULT_KW = dict(
     init=True,
@@ -35,7 +29,7 @@ FIELDS_DEFAULT_KW = dict(
 FIELDS_PARAMS = "__DOMINO_FIELD_PARAMS__"
 
 
-class SlotProtocol(typing.Protocol):
+class SlotProtocol(ty.Protocol):
     __slots__: tuple[str, ...]
 
 
@@ -49,6 +43,16 @@ MISSING_DEFAULT = _MISSING_DEFAULT()
 def read_slots(obj: SlotProtocol):
     if not hasattr(obj, "__slots__"):
         return dict()
+    slots = {key: getattr(obj, key) for key in obj.__slots__ if not key.startswith("_")}
+    return slots
+
+
+def read_attributes(obj) -> ty.Mapping:
+    if isinstance(obj, dict):
+        return obj
+    elif obj.__class__ is type or obj.__class__.__class__ is type:
+        return {key: val for key, val in obj.__dict__ if not key.startswith("_")}
+
     slots = {key: getattr(obj, key) for key in obj.__slots__ if not key.startswith("_")}
     return slots
 
@@ -92,21 +96,28 @@ def resort_fields(cls):
     return non_defaults | default_fields
 
 
-class MetaConfig:
-    init: bool = True
-    repr: bool = True
-    eq: bool = True
-    order: bool = False
-    unsafe_hash: bool = False
-    frozen: bool = False
-    match_args: bool = True
-    kw_only: bool = False
-    slots: bool = False
+class MetaConfig(ty.TypedDict, total=False):
+    init: bool  # = True
+    repr: bool  # = True
+    eq: bool  # = True
+    order: bool  # = False
+    unsafe_hash: bool  # = False
+    frozen: bool  # = False
+    match_args: bool  # = True
+    kw_only: bool  # = False
+    slots: bool  # = False
 
 
-@typing.dataclass_transform(kw_only_default=True)
+@ty.dataclass_transform(kw_only_default=True)
 class StructMeta(type):
-    def __new__(meta: "StructMeta", cls_name: str, bases: tuple, namespace: dict, _domino_subinit_hook: bool = False, **kwargs):  # type: ignore
+    def __new__(
+        meta: "StructMeta",
+        cls_name: str,
+        bases: tuple,
+        namespace: dict,
+        _domino_subinit_hook: bool = False,
+        **m_configs: ty.Unpack[MetaConfig],
+    ):
         if _domino_subinit_hook:
             raw_cls = super().__new__(meta, cls_name, bases, namespace)
             return raw_cls
@@ -122,8 +133,12 @@ class StructMeta(type):
 
         config = namespace.get(MetaConfig, {})  # BUG: this currently does not work
 
-        current_m_config = {k: kwargs[k] for k in kwargs if k in DATACLASS_DEFAULT_KW}
-        current_f_config = {k: kwargs[k] for k in kwargs if k in FIELDS_DEFAULT_KW}
+        current_m_config = {
+            k: m_configs[k] for k in m_configs if k in DATACLASS_DEFAULT_KW
+        }
+        current_f_config = {
+            k: m_configs[k] for k in m_configs if k in FIELDS_DEFAULT_KW
+        }
         model_config = DATACLASS_DEFAULT_KW | base_m_params | current_m_config | config
         field_config = FIELDS_DEFAULT_KW | base_f_params | current_f_config | config
 
@@ -147,9 +162,17 @@ class StructMeta(type):
 
         return cls_
 
-    def __call__(self, *args, **kwargs):
+    def __call__(obj_type, *args, **kwargs):
         if args:
             raise ArgumentError
+
+        pre_init = getattr(
+            obj_type,
+            "__pre_init__",
+            None,
+        )
+        if callable(pre_init):
+            kwargs = pre_init(**kwargs)
 
         obj = super().__call__(**kwargs)
         return obj
@@ -158,8 +181,16 @@ class StructMeta(type):
 class Struct(metaclass=StructMeta, kw_only=True):
     ...
 
+    # @classmethod
+    # def validate_all(cls, **kwargs) -> dict:
+    #     ...
 
-@typing.dataclass_transform(frozen_default=True)
+    # @classmethod
+    # def __pre_init__(cls, **kwargs) -> dict:
+    #     return cls.validate_all(**kwargs)
+
+
+@ty.dataclass_transform(kw_only_default=True, frozen_default=False)
 class FrozenStruct(metaclass=StructMeta, kw_only=True, frozen=True, slots=True):
     ...
 

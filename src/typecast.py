@@ -1,5 +1,5 @@
-from typing import get_type_hints, Protocol, ClassVar, Any
 from pathlib import Path
+from typing import Any, ClassVar, Protocol, get_type_hints
 
 
 class Dataclass(Protocol):
@@ -23,7 +23,7 @@ class ValueNotFoundError(Exception):
         return f"Value {self.missed_val} is not found"
 
 
-def parse_config(config: Dataclass, values: dict) -> dict:
+def parse_config(config, values: dict) -> dict:
     attrs = get_type_hints(config).items()
     if not attrs:
         return {}

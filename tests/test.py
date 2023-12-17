@@ -1,18 +1,21 @@
-from domino import (
-    Struct,
-    FrozenInstanceError,
-    FrozenStruct,
-    is_field_immutable,
-    ImmutableFieldError,
-)
+from dataclasses import FrozenInstanceError
 
-if not is_field_immutable(tuple[str, ...]):
+import pytest
+
+from domino import FrozenStruct, ImmutableFieldError, Struct
+from frozen import is_field_immutable
+
+if not is_field_immutable(tuple[str, ...], imtypes=[]):
     raise Exception
 
 
 class Base(Struct, kw_only=True):
     age: int = 15
     name: str
+
+    @classmethod
+    def __pre_init__(cls, **data):
+        ...
 
     # config = MetaConfig(frozen=True)
 
@@ -94,8 +97,8 @@ def test_is_field_immutable(attr_type):
 
 
 def test_event():
-    from datetime import datetime
     from dataclasses import field
+    from datetime import datetime
 
     class Event(FrozenStruct):
         name: str
@@ -105,7 +108,7 @@ def test_event():
     assert isinstance(e.created_at, datetime)
 
 
-def test():
+def test_all():
     test_struct()
     test_subclass_struct()
     test_frozen()
@@ -116,4 +119,4 @@ def test():
 
 
 if __name__ == "__main__":
-    test()
+    test_all()
