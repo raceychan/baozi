@@ -4,8 +4,8 @@
   - [Introduction](#introduction)
   - [Extract features domino offers](#extract-features-domino-offers)
   - [Rationale of existence](#rationale-of-existence)
-  - [why would I choose this over dataclass?](#why-would-i-choose-this-over-dataclass)
-  - [why would I choose this over pydantic.BaseModel?](#why-would-i-choose-this-over-pydanticbasemodel)
+    - [why wouldn't I just use dataclass?](#why-wouldnt-i-just-use-dataclass)
+    - [why wouldn't I just use pydantic.BaseModel?](#why-wouldnt-i-just-use-pydanticbasemodel)
   - [Installation](#installation)
   - [Usage](#usage)
   - [1. Usage of plain Struct](#1-usage-of-plain-struct)
@@ -30,7 +30,7 @@ domino is a light, drop-in replacement of python's builtin dataclass
 
 ## Rationale of existence
 
-## why would I choose this over dataclass?
+### why wouldn't I just use dataclass?
 
 Mostly because of **the decorator** approach, dataclass uses decorators for transforming a regular class into a dataclass, and when I use dataclass in production, I soon realize that:
 
@@ -40,9 +40,9 @@ Mostly because of **the decorator** approach, dataclass uses decorators for tran
 
 3. It simply does not make sense to use decorator, when you decorating a class, it implies that your class would work just fine without the decorator, and that is not the case, if you get rid of the `@dataclass` decorator, your class won't work.
 
-## why would I choose this over pydantic.BaseModel?
+### why wouldn't I just use pydantic.BaseModel?
 
-Mostly because of **You don't need validation**
+Mostly because of **You don't need validation**, and you can use both.
 
 pydantic is very powerful and strong and I use it in various projects, but there are
 certain scenarios where I find pydantic to be an overkill.
