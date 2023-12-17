@@ -2,7 +2,7 @@ from dataclasses import FrozenInstanceError
 
 import pytest
 
-from domino import FrozenStruct, ImmutableFieldError, Struct
+from domino import FrozenStruct, MetaConfig, MutableFieldError, Struct
 from frozen import is_field_immutable
 
 if not is_field_immutable(tuple[str, ...], imtypes=[]):
@@ -15,9 +15,9 @@ class Base(Struct, kw_only=True):
 
     @classmethod
     def __pre_init__(cls, **data):
-        ...
+        return data
 
-    # config = MetaConfig(frozen=True)
+    __meta_config__ = MetaConfig(frozen=False)
 
 
 class Time(Base):
@@ -86,7 +86,7 @@ def test_frozen_class_immutable():
         class Mutable(FrozenStruct):
             address: list[str]
 
-    except ImmutableFieldError:
+    except MutableFieldError:
         pass
     else:
         raise Exception("ImmutableFieldError not raised")

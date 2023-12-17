@@ -2,7 +2,7 @@ import sys
 import typing as ty
 from dataclasses import MISSING, _process_class, is_dataclass  # field,
 
-from error import ArgumentError, ImmutableFieldError
+from error import ArgumentError, MutableFieldError
 from frozen import is_class_immutable
 from slots import create_slots_struct
 from typecast import parse_config, read_env
@@ -131,7 +131,9 @@ class StructMeta(type):
                 base_m_params.update(get_dc_params(base))
                 base_f_params.update(getattr(base, FIELDS_PARAMS, {}))
 
-        config = namespace.get(MetaConfig, {})  # BUG: this currently does not work
+        config = namespace.get(
+            "__meta_config__", {}
+        )  # BUG: this currently does not work
 
         current_m_config = {
             k: m_configs[k] for k in m_configs if k in DATACLASS_DEFAULT_KW
@@ -139,6 +141,7 @@ class StructMeta(type):
         current_f_config = {
             k: m_configs[k] for k in m_configs if k in FIELDS_DEFAULT_KW
         }
+
         model_config = DATACLASS_DEFAULT_KW | base_m_params | current_m_config | config
         field_config = FIELDS_DEFAULT_KW | base_f_params | current_f_config | config
 
@@ -158,7 +161,7 @@ class StructMeta(type):
 
         # TODO: extract imtypes from cls_config
         if cls_config["frozen"] and not is_class_immutable(cls_, imtypes=[]):
-            raise ImmutableFieldError
+            raise MutableFieldError
 
         return cls_
 
@@ -172,7 +175,7 @@ class StructMeta(type):
             None,
         )
         if callable(pre_init):
-            kwargs = pre_init(**kwargs)
+            kwargs = pre_init(**kwargs) if kwargs is not None else kwargs
 
         obj = super().__call__(**kwargs)
         return obj
