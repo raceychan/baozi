@@ -89,6 +89,7 @@ p = Person(name="domino")
 
 > - Note here that attribute with default value does not have to show before regular attributeo
 > - You might place dataclass configration directly in class inheritance
+> - configs will be passed to subclasses
 
 ## 2. Usage of FrozenStruct
 
@@ -130,8 +131,6 @@ class Mutable(FrozenStruct):
 
 domino.MutableFieldError
 ```
-
-
 
 ### Technical Details
 
