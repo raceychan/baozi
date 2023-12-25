@@ -4,11 +4,11 @@ from time import perf_counter
 
 from pydantic import BaseModel
 
-from baozi import FrozenStruct
+from baozi import FrozenStruct, Struct
 
 
 class Timer:
-    def __init__(self, floor=0, precision=3):
+    def __init__(self, floor: float = 0, precision: int = 3):
         self.result = floor
         self.precision = precision
 
@@ -25,56 +25,68 @@ class Timer:
 
 
 @contextmanager
-def timer():
-    with Timer() as t:
-        yield
+def timer(floor: float = 0, precision: int = 3):
+    with Timer(floor=floor, precision=precision) as t:
+        yield t
     t.show()
 
 
 TRIALS = 10**6
 
 
-class B:
+class PlainPythonClass:
     def __init__(self, name: str, age: int):
         self.name = name
         self.age = age
 
 
 @dataclass
-class T:
+class DataClass:
     name: str
     age: int
 
 
-class P(BaseModel):
+class BaoziStruct(Struct):
     name: str
     age: int
 
 
-class D(FrozenStruct):
+class BaoziFrozenStruct(FrozenStruct):
     name: str
     age: int
 
 
-def test_py_class():
-    with timer():
+# pydantic.__version__ == '2.5.2'
+class PydanticModel(BaseModel):
+    name: str
+    age: int
+
+
+def test_performan_ranking():
+    with timer() as plainpyclass:
         for _ in range(TRIALS):
-            B(name="a", age=2)
+            PlainPythonClass(name="a", age=2)
 
-
-def test_dataclass():
-    with timer():
+    with timer() as dataclass:
         for _ in range(TRIALS):
-            T(name="a", age=2)
+            DataClass(name="a", age=2)
 
-
-def test_domino():
-    with timer():
+    with timer() as baozistruct:
         for _ in range(TRIALS):
-            D(name="a", age=2)
+            BaoziStruct(name="a", age=2)
 
-
-def test_pydantic():
-    with timer():
+    with timer() as pydanticbase:
         for _ in range(TRIALS):
-            P(name="a", age=2)
+            PydanticModel(name="a", age=2)
+
+    ECHELON = 0.1
+
+    assert abs(plainpyclass.result - dataclass.result) < ECHELON
+    assert plainpyclass.result < baozistruct.result < pydanticbase.result
+
+    print(
+        f"PlainPythonClass: {plainpyclass.result} seconds\n"
+        f"DataClass: {dataclass.result} seconds\n"
+        f"BaoziFrozenStruct: {baozistruct.result} seconds\n"
+        f"PydanticModel: {pydanticbase.result} seconds\n"
+    )

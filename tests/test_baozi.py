@@ -121,6 +121,17 @@ def test_pre_init():
 
     assert asdict(A(name="name", age=15)) == {"name": "test", "age": 15}
 
+    class B(baozi.Struct):
+        name: str
+        age: int
+
+        @classmethod
+        def __pre_init__(cls, **data):
+            data["age"] = int(data["age"])
+            return data
+
+    assert asdict(B(name="name", age="15")) == {"name": "name", "age": 15}
+
 
 def test_arg_error():
     class B(baozi.Struct):

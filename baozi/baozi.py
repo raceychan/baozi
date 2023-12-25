@@ -82,7 +82,7 @@ def get_dc_params(dataclass):
 
 
 class MetaConfig(ty.TypedDict):
-    init: ty.Required[bool]  # = True
+    init: ty.NotRequired[bool]  # = True
     repr: ty.NotRequired[bool]  # = True
     eq: ty.NotRequired[bool]  # = True
     order: ty.NotRequired[bool]  # = False
@@ -169,17 +169,16 @@ class StructMeta(type):
         if pre_init is not None:
 
             def new_call(obj_type: type, *args, **kwargs):
-                kwargs = pre_init(**kwargs)
-                return super().__call__(*args, **kwargs)
+                return super().__call__(*args, **pre_init(**kwargs))  # type: ignore
 
         else:
 
             def new_call(obj_type: type, *args, **kwargs):
                 if args:
                     raise ArgumentError
-                return super().__call__(**kwargs)
+                return super().__call__(*args, **kwargs)  # type: ignore
 
-        meta_cls.__call__ = new_call
+        meta_cls.__call__ = new_call  # type: ignore
         return cls_
 
 
