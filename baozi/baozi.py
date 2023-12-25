@@ -1,14 +1,14 @@
 import sys
 import typing as ty
-from dataclasses import MISSING as MISSING  # field,
-from dataclasses import _process_class as _process_class
+from dataclasses import MISSING as MISSING
+from dataclasses import _process_class as _process_class  # type: ignore
 from dataclasses import asdict, is_dataclass
 from types import MethodType as MethodType
 
-from .error import ArgumentError, InvalidType, MutableFieldError
+from .error import ArgumentError, InvalidTypeError, MutableFieldError
 from .frozen import is_class_immutable
 from .slots import create_slots_struct
-from .typecast import parse_config  # , read_env
+from .typecast import parse_config
 
 DATACLASS_DEFAULT_KW = dict(
     init=True,
@@ -158,7 +158,7 @@ class StructMeta(type):
         if cls_config["frozen"]:
             try:
                 is_class_immutable(cls_, imtypes=BAOZI_META_TYPE)
-            except InvalidType as it:
+            except InvalidTypeError as it:
                 raise MutableFieldError(it.attr_name, it.type_) from it
 
         pre_init: ty.Callable | None = getattr(cls_, "__pre_init__", None)
@@ -199,3 +199,7 @@ class FrozenStruct(metaclass=StructMeta):
 class ConfigBase(FrozenStruct):  # type: ignore
     def __repr__(self):
         return pretty_repr(self)
+
+    @classmethod
+    def parse(cls, config: ty.Mapping[str, ty.Any]):
+        return cls(**parse_config(cls, config))

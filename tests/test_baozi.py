@@ -5,9 +5,6 @@ import pytest
 import baozi
 from baozi.frozen import is_field_immutable
 
-if not is_field_immutable(tuple[str, ...], imtypes=[]):
-    raise Exception
-
 
 class Base(baozi.Struct, kw_only=True):
     age: int = 15
@@ -145,8 +142,10 @@ def test_type_coerce_error():
         name: str
         age: int
 
+    config = {"name": "name", "age": "a"}
+
     try:
-        baozi.parse_config(Config, {"name": "name", "age": "a"})
+        baozi.parse_config(Config, config)
     except baozi.TypeCoerceError as tce:
         print(tce)
     else:
@@ -158,3 +157,33 @@ def test_type_coerce_error():
         print(vnf)
     else:
         raise Exception("Should not reach here")
+
+    new_config = {"name": "name", "age": "15"}
+    c = Config.parse(new_config)
+    print(c)
+
+    e = baozi.parse_config(baozi.FrozenStruct, {})
+
+
+def test_error():
+    e = baozi.InvalidTypeError("name", type)
+    str(e)
+    age = baozi.ArgumentError()
+    str(age)
+
+
+def test_immutable_check():
+    assert is_field_immutable(tuple[str, ...], imtypes=[])
+
+    assert not is_field_immutable(list[str], imtypes=[])
+
+    class Base:
+        name: str
+        names: tuple[str]
+
+    assert is_field_immutable(Base, imtypes=[])
+
+    class C:
+        b: Base
+
+    assert is_field_immutable(C, imtypes=[])

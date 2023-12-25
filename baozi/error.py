@@ -1,4 +1,4 @@
-class InvalidType(Exception):
+class InvalidTypeError(Exception):
     def __init__(self, attr_name, type_) -> None:
         self.attr_name = attr_name
         self.type_ = type_
@@ -14,5 +14,5 @@ class ArgumentError(Exception):
         return msg
 
 
-class MutableFieldError(InvalidType):
+class MutableFieldError(InvalidTypeError):
     ...

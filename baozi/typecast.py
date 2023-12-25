@@ -23,16 +23,21 @@ class ValueNotFoundError(Exception):
         return f"Value {self.missed_val} is not found"
 
 
-def parse_config(config: object, values: dict) -> dict:
-    attrs = ty.get_type_hints(config).items()
+def parse_config(config: object, values: ty.Mapping[str, ty.Any]) -> dict:
+    ori_attrs: dict[str, type] = ty.get_type_hints(config)
+    attrs = {
+        attr_name: attr_type
+        for attr_name, attr_type in ori_attrs.items()
+        if not ty.get_origin(attr_type) == ty.ClassVar
+    }
     if not attrs:
         return {}
 
     config_dict = dict()
-    for attr_name, attr_type in attrs:
+    for attr_name, attr_type in attrs.items():
         if (val := values.get(attr_name)) == None:
-            if ty.get_origin(attr_type) == ty.ClassVar:
-                continue
+            # if ty.get_origin(attr_type) == ty.ClassVar:
+            #     continue
             raise ValueNotFoundError(attr_name)
         try:
             config_dict[attr_name] = attr_type(val)

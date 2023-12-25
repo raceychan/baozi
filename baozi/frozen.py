@@ -1,7 +1,7 @@
-import typing
+import typing as ty
 from datetime import date, datetime
 
-from .error import InvalidType
+from .error import InvalidTypeError
 
 SINGLETON = {
     True,
@@ -20,10 +20,10 @@ IMMUTABLE_NONCONTAINER_TYPES = {
 } | SINGLETON
 
 IMMUTABLE_CUSTOM_TYPES = {date, datetime}
-IMMUTABLE_CONTAINER_TYPES = {tuple, frozenset, typing.Union, typing.Literal}
+IMMUTABLE_CONTAINER_TYPES = {tuple, frozenset, ty.Union, ty.Literal}
 
 
-def is_field_immutable(field, imtypes: typing.Iterable[type] = {}):
+def is_field_immutable(field: type, imtypes: ty.Iterable[type] = {}) -> bool:
     # Base case: if this is a non-container type, it is immutable
     if field in IMMUTABLE_NONCONTAINER_TYPES:
         return True
@@ -36,31 +36,30 @@ def is_field_immutable(field, imtypes: typing.Iterable[type] = {}):
 
     # If this is a container type, it is immutable if all its contained types are immutable
     if origin and origin in IMMUTABLE_CONTAINER_TYPES:
-        return all(is_field_immutable(arg, imtypes) for arg in field.__args__)
+        return all(is_field_immutable(arg, imtypes) for arg in field.__args__)  # type: ignore
 
     # If this is a class, it is immutable if all its fields are
     if isinstance(field, type) and hasattr(field, "__annotations__"):
         return is_class_immutable(field, imtypes)
 
-    # TODO: should return information about field that is mutable
     return False
 
 
-def is_class_immutable(cls: type, imtypes: typing.Iterable[type]):
+def is_class_immutable(cls: type, imtypes: ty.Iterable[type]):
     # BUG: cosnsider class T(tuple): ...
     # class B(T): ...
     # both are subclass of immutable,
     # yet would be assert to be mutable in current impl
 
-    annotations = typing.get_type_hints(cls)
+    annotations = ty.get_type_hints(cls)
     namespace = annotations.items()
     for attr_name, attr_type in namespace:
         if not is_field_immutable(attr_type, imtypes):
-            raise InvalidType(attr_name, attr_type)
+            raise InvalidTypeError(attr_name, attr_type)
     return True
 
 
-class Mutability(typing.NamedTuple):
+class Mutability(ty.NamedTuple):
     obj: object
     attr_name: str
     attr_type: type

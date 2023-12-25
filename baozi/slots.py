@@ -2,7 +2,7 @@ import itertools
 from dataclasses import _process_class, fields
 
 
-def _get_slots(cls):
+def _get_slots(cls: type):
     match cls.__dict__.get("__slots__"):
         case None:
             return
