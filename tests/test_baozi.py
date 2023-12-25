@@ -141,6 +141,28 @@ def test_arg_error():
     with pytest.raises(baozi.ArgumentError):
         B("name", age=15, address="address")
 
+    with pytest.raises(TypeError):
+
+        class T(baozi.FrozenStruct):
+            name: str
+            age: int
+
+            def __pre_init__(cls, **data):
+                data["age"] = int(data["age"])
+                return data
+
+    class T(baozi.FrozenStruct):
+        name: str
+        age: int
+
+        @classmethod
+        def __pre_init__(cls, **data):
+            data["age"] = int(data["age"])
+            return data
+
+    with pytest.raises(baozi.ArgumentError):
+        T("name", age=15, address="address")
+
 
 def test_freeze_but():
     f = Freeze(name="name", age=15)

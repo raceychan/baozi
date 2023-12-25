@@ -5,7 +5,7 @@ from setuptools import find_packages, setup
 PROJECT_NAME = "baozi"
 PROJECT_ROOT = pathlib.Path.cwd()
 URL = "https://github.com/raceychan/baozi"
-VERSION = "0.0.3"
+VERSION = "0.0.4"
 
 import codecs
 

@@ -1,3 +1,4 @@
+import inspect
 import sys
 import typing as ty
 from dataclasses import MISSING as MISSING
@@ -166,17 +167,25 @@ class StructMeta(type):
                 raise MutableFieldError(it.attr_name, it.type_) from it
 
         pre_init: ty.Callable | None = getattr(cls_, "__pre_init__", None)
+
         if pre_init is not None:
+            if not (inspect.ismethod(pre_init) and pre_init.__self__ is cls_):
+                raise TypeError(
+                    f"__pre_init__ must be a class method of {cls_.__name__}"
+                )
 
             def new_call(obj_type: type, *args, **kwargs):
-                return super().__call__(*args, **pre_init(**kwargs))  # type: ignore
+                if args:
+                    raise ArgumentError
+
+                return super().__call__(**pre_init(**kwargs))  # type: ignore
 
         else:
 
             def new_call(obj_type: type, *args, **kwargs):
                 if args:
                     raise ArgumentError
-                return super().__call__(*args, **kwargs)  # type: ignore
+                return super().__call__(**kwargs)  # type: ignore
 
         meta_cls.__call__ = new_call  # type: ignore
         return cls_
