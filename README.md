@@ -30,16 +30,8 @@ dataclass alternative with a greater emphasis on the 'class' aspect.
 
 ## Installation
 
-1.install baozi using pip
-
 ```bash
 pip install baozi
-```
-
-2.import baozi packages in your project
-
-```python
-from baozi import Struct
 ```
 
 ## Usage
