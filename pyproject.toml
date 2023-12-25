@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "domino"
+name = "baozi"
 version = "0.1.0"
 description = ""
 authors = ["race <raceychan@gmail.com>"]

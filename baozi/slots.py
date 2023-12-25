@@ -64,8 +64,8 @@ def _add_slots(cls, is_frozen: bool, weakref_slot: bool):
     # And finally create the class.
     qualname = getattr(cls, "__qualname__", None)
 
-    cls = type(cls)(cls.__name__, cls.__bases__, cls_dict, _domino_subinit_hook=True)
-    # NOTE(race): without _domino_subinit_hook, this would trigger recursive StructMeta.__new__ call.
+    cls = type(cls)(cls.__name__, cls.__bases__, cls_dict, _baozi_subinit_hook=True)
+    # NOTE(race): without _baozi_subinit_hook, this would trigger recursive StructMeta.__new__ call.
 
     if qualname is not None:
         cls.__qualname__ = qualname

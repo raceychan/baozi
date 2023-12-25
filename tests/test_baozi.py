@@ -1,17 +1,15 @@
-import pathlib
-from dataclasses import FrozenInstanceError
+from dataclasses import FrozenInstanceError, asdict
 
 import pytest
 
-import domino
-import typecast
-from frozen import is_field_immutable
+import baozi
+from baozi.frozen import is_field_immutable
 
 if not is_field_immutable(tuple[str, ...], imtypes=[]):
     raise Exception
 
 
-class Base(domino.Struct, kw_only=True):
+class Base(baozi.Struct, kw_only=True):
     age: int = 15
     name: str
 
@@ -19,7 +17,7 @@ class Base(domino.Struct, kw_only=True):
     def __pre_init__(cls, **data):
         return data
 
-    __meta_config__ = domino.MetaConfig(frozen=False)
+    __meta_config__ = baozi.MetaConfig(frozen=False)
 
 
 class Time(Base, flyweight=True):
@@ -27,7 +25,7 @@ class Time(Base, flyweight=True):
     addres: str
 
 
-class Freeze(domino.FrozenStruct):
+class Freeze(baozi.FrozenStruct):
     name: str = "freeze"
     age: int
 
@@ -79,9 +77,9 @@ def test_frozen_immutable():
 
 
 def test_frozen_class_immutable():
-    with pytest.raises(domino.MutableFieldError):
+    with pytest.raises(baozi.MutableFieldError):
 
-        class Mutable(domino.FrozenStruct):
+        class Mutable(baozi.FrozenStruct):
             address: list[str]
 
 
@@ -93,7 +91,7 @@ def test_event():
     from dataclasses import field
     from datetime import datetime
 
-    class Event(domino.FrozenStruct):
+    class Event(baozi.FrozenStruct):
         name: str
         created_at: datetime = field(default_factory=datetime.now)
 
@@ -102,20 +100,20 @@ def test_event():
 
 
 def test_read_attribute():
-    domino.read_attributes({"name": "name", "age": 15})
-    domino.read_attributes(Base(name="name", age=15))
-    domino.read_attributes(Freeze(name="name", age=15))
-    domino.read_attributes(tuple)
+    baozi.read_attributes({"name": "name", "age": 15})
+    baozi.read_attributes(Base(name="name", age=15))
+    baozi.read_attributes(Freeze(name="name", age=15))
+    baozi.read_attributes(tuple)
 
 
 def test_pretty_repr():
-    domino.pretty_repr(Freeze(name="name", age=15))
-    domino.pretty_repr(Base(name="name", age=15))
+    baozi.pretty_repr(Freeze(name="name", age=15))
+    baozi.pretty_repr(Base(name="name", age=15))
     assert Freeze.__meta_config__["frozen"] == True
 
 
 def test_pre_init():
-    class A(domino.Struct):
+    class A(baozi.Struct):
         name: str
         age: int
 
@@ -124,15 +122,15 @@ def test_pre_init():
             data["name"] = "test"
             return data
 
-    assert domino.asdict(A(name="name", age=15)) == {"name": "test", "age": 15}
+    assert asdict(A(name="name", age=15)) == {"name": "test", "age": 15}
 
 
 def test_arg_error():
-    class B(domino.Struct):
+    class B(baozi.Struct):
         name: str
         age: int
 
-    with pytest.raises(domino.ArgumentError):
+    with pytest.raises(baozi.ArgumentError):
         B("name", age=15, address="address")
 
 
@@ -143,20 +141,20 @@ def test_freeze_but():
 
 
 def test_type_coerce_error():
-    class Config(domino.ConfigBase):
+    class Config(baozi.ConfigBase):
         name: str
         age: int
 
     try:
-        typecast.parse_config(Config, {"name": "name", "age": "a"})
-    except typecast.TypeCoerceError as tce:
+        baozi.parse_config(Config, {"name": "name", "age": "a"})
+    except baozi.TypeCoerceError as tce:
         print(tce)
     else:
         raise Exception("Should not reach here")
 
     try:
-        typecast.parse_config(Config, {"name": "name"})
-    except typecast.ValueNotFoundError as vnf:
+        baozi.parse_config(Config, {"name": "name"})
+    except baozi.ValueNotFoundError as vnf:
         print(vnf)
     else:
         raise Exception("Should not reach here")

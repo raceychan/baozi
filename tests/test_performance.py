@@ -4,7 +4,7 @@ from time import perf_counter
 
 from pydantic import BaseModel
 
-from domino import FrozenStruct
+from baozi import FrozenStruct
 
 
 class Timer:

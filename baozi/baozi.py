@@ -5,10 +5,10 @@ from dataclasses import _process_class as _process_class
 from dataclasses import asdict, is_dataclass
 from types import MethodType as MethodType
 
-from error import ArgumentError, InvalidType, MutableFieldError
-from frozen import is_class_immutable
-from slots import create_slots_struct
-from typecast import parse_config  # , read_env
+from .error import ArgumentError, InvalidType, MutableFieldError
+from .frozen import is_class_immutable
+from .slots import create_slots_struct
+from .typecast import parse_config  # , read_env
 
 DATACLASS_DEFAULT_KW = dict(
     init=True,
@@ -29,7 +29,7 @@ FIELDS_DEFAULT_KW = dict(
 )
 
 
-FIELDS_PARAMS = "__DOMINO_FIELD_PARAMS__"
+FIELDS_PARAMS = "__BAOZI_FIELD_PARAMS__"
 
 
 class SlotProtocol(ty.Protocol):
@@ -82,19 +82,19 @@ def get_dc_params(dataclass):
 
 
 class MetaConfig(ty.TypedDict, total=False):
-    init: ty.Required[bool]  # = True
-    repr: bool  # = True
-    eq: bool  # = True
-    order: bool  # = False
-    unsafe_hash: bool  # = False
-    frozen: bool  # = False
-    match_args: bool  # = True
-    kw_only: bool  # = False
-    slots: bool  # = False
-    flyweight: bool  # = False
+    init: ty.NotRequired[bool]  # = True
+    repr: ty.NotRequired[bool]  # = True
+    eq: ty.NotRequired[bool]  # = True
+    order: ty.NotRequired[bool]  # = False
+    unsafe_hash: ty.NotRequired[bool]  # = False
+    frozen: ty.NotRequired[bool]  # = False
+    match_args: ty.NotRequired[bool]  # = True
+    kw_only: ty.NotRequired[bool]  # = False
+    slots: ty.NotRequired[bool]  # = False
+    flyweight: ty.NotRequired[bool]  # = False
 
 
-DOMINO_META_TYPE = (ty.ClassVar[MetaConfig],)
+BAOZI_META_TYPE = (ty.ClassVar[MetaConfig],)
 
 
 @ty.dataclass_transform(kw_only_default=True)
@@ -106,10 +106,10 @@ class StructMeta(type):
         cls_name: str,
         bases: tuple,
         namespace: dict,
-        _domino_subinit_hook: bool = False,
+        _baozi_subinit_hook: bool = False,
         **m_configs: ty.Unpack[MetaConfig],
     ):
-        if _domino_subinit_hook:
+        if _baozi_subinit_hook:
             raw_cls = super().__new__(meta_cls, cls_name, bases, namespace)
             return raw_cls
 
@@ -157,20 +157,20 @@ class StructMeta(type):
         # TODO: extract imtypes from cls_config
         if cls_config["frozen"]:
             try:
-                is_class_immutable(cls_, imtypes=DOMINO_META_TYPE)
+                is_class_immutable(cls_, imtypes=BAOZI_META_TYPE)
             except InvalidType as it:
                 raise MutableFieldError(it.attr_name, it.type_) from it
 
         pre_init: ty.Callable | None = getattr(cls_, "__pre_init__", None)
         if pre_init is not None:
 
-            def new_call(obj_type, *args, **kwargs):
+            def new_call(obj_type: type, *args, **kwargs):
                 kwargs = pre_init(**kwargs)
                 return super().__call__(*args, **kwargs)
 
         else:
 
-            def new_call(obj_type, *args, **kwargs):
+            def new_call(obj_type: type, *args, **kwargs):
                 if args:
                     raise ArgumentError
                 return super().__call__(**kwargs)

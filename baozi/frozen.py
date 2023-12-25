@@ -1,8 +1,7 @@
 import typing
-import warnings
 from datetime import date, datetime
 
-from error import InvalidType
+from .error import InvalidType
 
 SINGLETON = {
     True,
