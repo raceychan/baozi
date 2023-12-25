@@ -183,7 +183,67 @@ def test_immutable_check():
 
     assert is_field_immutable(Base, imtypes=[])
 
+    from collections import deque
+    from datetime import datetime
+
     class C:
         b: Base
+        d: datetime
+        q: deque
 
-    assert is_field_immutable(C, imtypes=[])
+    with pytest.raises(baozi.InvalidTypeError):
+        is_field_immutable(C)
+
+    assert is_field_immutable(C, imtypes=[deque])
+
+
+from baozi.slots import _add_slots, _dataclass_getstate, _dataclass_setstate, _get_slots
+
+
+def test_get_slots_with_defined_slots():
+    class TestClass:
+        __slots__ = ("a", "b", "c")
+
+    slots = list(_get_slots(TestClass))
+    assert slots == ["a", "b", "c"]
+
+
+def test_get_slots_with_no_slots():
+    class TestClass:
+        pass
+
+    slots = list(_get_slots(TestClass))
+    assert slots is None or slots == []
+
+
+def test_get_slots_with_invalid_slots():
+    with pytest.raises(TypeError):
+
+        class TestClass:
+            __slots__ = str  # Invalid, should be an iterable
+
+
+def test_slost_error():
+    class TestDataClass(baozi.FrozenStruct):
+        name: str
+        age: int
+        active: bool
+
+    test_instance = TestDataClass(name="John", age=30, active=True)
+    state = _dataclass_getstate(test_instance)
+    assert state == ["John", 30, True]
+
+    new_state = ["Orange", 5]
+    _dataclass_setstate(test_instance, new_state)
+    assert test_instance.name == "Orange"
+    assert test_instance.age == 5
+
+    with pytest.raises(TypeError):
+
+        class B(baozi.FrozenStruct):
+            __slots__ = ("name", "age", "active")
+
+    with pytest.raises(TypeError):
+
+        class C(baozi.FrozenStruct):
+            __slots__ = int

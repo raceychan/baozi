@@ -113,6 +113,10 @@ class StructMeta(type):
             raw_cls = super().__new__(meta_cls, cls_name, bases, namespace)
             return raw_cls
 
+        if user_defined_slot := namespace.get("__slots__", False):
+            if not isinstance(user_defined_slot, ty.Iterable):
+                raise TypeError("__slots__ must be iterable")
+
         raw_cls = super().__new__(meta_cls, cls_name, bases, namespace)
 
         base_m_params = dict()

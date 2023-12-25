@@ -21,9 +21,10 @@ IMMUTABLE_NONCONTAINER_TYPES = {
 
 IMMUTABLE_CUSTOM_TYPES = {date, datetime}
 IMMUTABLE_CONTAINER_TYPES = {tuple, frozenset, ty.Union, ty.Literal}
+_EMPTY_SET: ty.Final[set[type]] = set()
 
 
-def is_field_immutable(field: type, imtypes: ty.Iterable[type] = {}) -> bool:
+def is_field_immutable(field: type, imtypes: ty.Iterable[type] = _EMPTY_SET) -> bool:
     # Base case: if this is a non-container type, it is immutable
     if field in IMMUTABLE_NONCONTAINER_TYPES:
         return True
