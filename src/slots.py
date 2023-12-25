@@ -1,5 +1,5 @@
 import itertools
-from dataclasses import fields, _process_class
+from dataclasses import _process_class, fields
 
 
 def _get_slots(cls):
@@ -8,8 +8,6 @@ def _get_slots(cls):
             return
         case str(slot):
             yield slot
-        # Slots may be any iterable, but we cannot handle an iterator
-        # because it will already be (partially) consumed.
         case iterable if not hasattr(iterable, "__next__"):
             yield from iterable
         case _:
@@ -66,14 +64,9 @@ def _add_slots(cls, is_frozen: bool, weakref_slot: bool):
     # And finally create the class.
     qualname = getattr(cls, "__qualname__", None)
 
-    # NOTE(race): This would trigger another __new__ call, which leades to calling every function in the call stack
-    # cls = type(cls)(cls.__name__, cls.__bases__, cls_dict)
-    # chagned to:
-    # cls = type(cls).__base__(cls.__name__, cls.__bases__, cls_dict)
-    # does not work, since would call the __new__ of type, which we have not control over
-    # thus, we add a _domino_subinit_hook to the __new__ call, which will skip the repreated __new__ call
-
     cls = type(cls)(cls.__name__, cls.__bases__, cls_dict, _domino_subinit_hook=True)
+    # NOTE(race): without _domino_subinit_hook, this would trigger recursive StructMeta.__new__ call.
+
     if qualname is not None:
         cls.__qualname__ = qualname
 
@@ -88,11 +81,11 @@ def _add_slots(cls, is_frozen: bool, weakref_slot: bool):
 def create_slots_struct(raw_cls: type, cls_config: dict):
     # create a dataclass with slots being False
     cls_config.update(slots=False)
-    dtc = _process_class(raw_cls, **cls_config)
+    cls_ = _process_class(raw_cls, **cls_config)
 
     # create another dataclass with slots using previous dataclass
     slot_dtc = _add_slots(
-        dtc, is_frozen=cls_config["frozen"], weakref_slot=cls_config["weakref_slot"]
+        cls_, is_frozen=cls_config["frozen"], weakref_slot=cls_config["weakref_slot"]
     )
 
     # return the new class with slots

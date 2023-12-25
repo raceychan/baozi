@@ -2,6 +2,15 @@ import typing
 import warnings
 from datetime import date, datetime
 
+from error import InvalidType
+
+SINGLETON = {
+    True,
+    False,
+    None,
+    ...,  # Ellipsis is immutable
+}
+
 IMMUTABLE_NONCONTAINER_TYPES = {
     int,
     float,
@@ -9,19 +18,13 @@ IMMUTABLE_NONCONTAINER_TYPES = {
     bool,
     str,
     bytes,
-    True,
-    False,
-    None,
-    ...,  # Ellipsis is immutable
-}
+} | SINGLETON
 
 IMMUTABLE_CUSTOM_TYPES = {date, datetime}
-
-
 IMMUTABLE_CONTAINER_TYPES = {tuple, frozenset, typing.Union, typing.Literal}
 
 
-def is_field_immutable(field, imtypes: typing.Iterable[type]):
+def is_field_immutable(field, imtypes: typing.Iterable[type] = {}):
     # Base case: if this is a non-container type, it is immutable
     if field in IMMUTABLE_NONCONTAINER_TYPES:
         return True
@@ -54,16 +57,12 @@ def is_class_immutable(cls: type, imtypes: typing.Iterable[type]):
     namespace = annotations.items()
     for attr_name, attr_type in namespace:
         if not is_field_immutable(attr_type, imtypes):
-            warnings.warn(f"Attribute ({attr_name}, {attr_type}) of {cls} is mutable")
-            return False
+            raise InvalidType(attr_name, attr_type)
     return True
 
 
-class Mutability:
-    __slots__ = ("obj", "attr_name", "attr_type", "is_immutable")
-
-    def __init__(self, obj, attr_name: str, attr_type, is_immutable: bool):
-        self.obj = obj
-        self.attr_name = attr_name
-        self.attr_type = attr_type
-        self.is_immutable = is_immutable
+class Mutability(typing.NamedTuple):
+    obj: object
+    attr_name: str
+    attr_type: type
+    is_immutable: bool

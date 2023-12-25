@@ -14,5 +14,5 @@ class ArgumentError(Exception):
         return msg
 
 
-class MutableFieldError(TypeError):
+class MutableFieldError(InvalidType):
     ...

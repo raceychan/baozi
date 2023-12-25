@@ -1,15 +1,17 @@
+import pathlib
 from dataclasses import FrozenInstanceError
 
 import pytest
 
-from domino import FrozenStruct, MetaConfig, MutableFieldError, Struct
+import domino
+import typecast
 from frozen import is_field_immutable
 
 if not is_field_immutable(tuple[str, ...], imtypes=[]):
     raise Exception
 
 
-class Base(Struct, kw_only=True):
+class Base(domino.Struct, kw_only=True):
     age: int = 15
     name: str
 
@@ -17,15 +19,15 @@ class Base(Struct, kw_only=True):
     def __pre_init__(cls, **data):
         return data
 
-    __meta_config__ = MetaConfig(frozen=False)
+    __meta_config__ = domino.MetaConfig(frozen=False)
 
 
-class Time(Base):
+class Time(Base, flyweight=True):
     money: int = 0
     addres: str
 
 
-class Freeze(FrozenStruct):
+class Freeze(domino.FrozenStruct):
     name: str = "freeze"
     age: int
 
@@ -63,12 +65,8 @@ def test_frozen():
     f = Freeze(name="freeze", age=15)
     assert f.name == "freeze" and f.age == 15
 
-    try:
+    with pytest.raises(FrozenInstanceError):
         f.age = 16
-    except FrozenInstanceError:
-        pass
-    else:
-        raise Exception("FrozenInstanceError not raised")
 
 
 def test_subclass_frozen():
@@ -81,18 +79,13 @@ def test_frozen_immutable():
 
 
 def test_frozen_class_immutable():
-    try:
+    with pytest.raises(domino.MutableFieldError):
 
-        class Mutable(FrozenStruct):
+        class Mutable(domino.FrozenStruct):
             address: list[str]
 
-    except MutableFieldError:
-        pass
-    else:
-        raise Exception("ImmutableFieldError not raised")
 
-
-def test_is_field_immutable(attr_type):
+def field_is_immutable(attr_type):
     return is_field_immutable(attr_type)
 
 
@@ -100,7 +93,7 @@ def test_event():
     from dataclasses import field
     from datetime import datetime
 
-    class Event(FrozenStruct):
+    class Event(domino.FrozenStruct):
         name: str
         created_at: datetime = field(default_factory=datetime.now)
 
@@ -108,15 +101,62 @@ def test_event():
     assert isinstance(e.created_at, datetime)
 
 
-def test_all():
-    test_struct()
-    test_subclass_struct()
-    test_frozen()
-    test_subclass_frozen()
-    test_frozen_immutable()
-    test_event()
-    test_frozen_class_immutable()
+def test_read_attribute():
+    domino.read_attributes({"name": "name", "age": 15})
+    domino.read_attributes(Base(name="name", age=15))
+    domino.read_attributes(Freeze(name="name", age=15))
+    domino.read_attributes(tuple)
 
 
-if __name__ == "__main__":
-    test_all()
+def test_pretty_repr():
+    domino.pretty_repr(Freeze(name="name", age=15))
+    domino.pretty_repr(Base(name="name", age=15))
+    assert Freeze.__meta_config__["frozen"] == True
+
+
+def test_pre_init():
+    class A(domino.Struct):
+        name: str
+        age: int
+
+        @classmethod
+        def __pre_init__(cls, **data):
+            data["name"] = "test"
+            return data
+
+    assert domino.asdict(A(name="name", age=15)) == {"name": "test", "age": 15}
+
+
+def test_arg_error():
+    class B(domino.Struct):
+        name: str
+        age: int
+
+    with pytest.raises(domino.ArgumentError):
+        B("name", age=15, address="address")
+
+
+def test_freeze_but():
+    f = Freeze(name="name", age=15)
+    f2 = f.but(name="name2")
+    assert f2.name == "name2" and f2.age == 15
+
+
+def test_type_coerce_error():
+    class Config(domino.ConfigBase):
+        name: str
+        age: int
+
+    try:
+        typecast.parse_config(Config, {"name": "name", "age": "a"})
+    except typecast.TypeCoerceError as tce:
+        print(tce)
+    else:
+        raise Exception("Should not reach here")
+
+    try:
+        typecast.parse_config(Config, {"name": "name"})
+    except typecast.ValueNotFoundError as vnf:
+        print(vnf)
+    else:
+        raise Exception("Should not reach here")
