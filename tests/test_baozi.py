@@ -1,4 +1,4 @@
-from dataclasses import FrozenInstanceError, asdict
+from dataclasses import FrozenInstanceError, asdict, field
 
 import pytest
 
@@ -247,3 +247,30 @@ def test_slost_error():
 
         class C(baozi.FrozenStruct):
             __slots__ = int
+
+
+class MyTestDataClass(baozi.Struct):
+    name: str = field(default="Unknown")
+    age: int = field(repr=False)
+    active: bool = field(compare=False)
+
+
+def test_field():
+    test_instance = MyTestDataClass(age=30, active=True)
+    assert test_instance.name == "Unknown"
+    assert test_instance.age == 30
+    assert test_instance.active is True
+
+
+def test_field_repr():
+    test_instance = MyTestDataClass(age=30, active=True)
+    assert "age" not in repr(test_instance)
+
+
+def test_field_compare():
+    instance1 = MyTestDataClass(name="John", age=30, active=True)
+    instance2 = MyTestDataClass(name="John", age=25, active=False)
+    # Even though 'active' is different, comparison should only consider 'name' and 'age'
+    assert instance1 != instance2  # Different 'age'
+    instance2.age = 30
+    assert instance1 == instance2  # Same 'name' and 'age', despite different 'active'

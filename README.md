@@ -38,6 +38,8 @@ pip install baozi
 
 ## 1. Usage of plain Struct
 
+
+
 ```python
 from baozi import Struct
 
@@ -48,9 +50,11 @@ class Person(Struct, kw_only=True):
 p = Person(name="baozi")
 ```
 
-> - Note here that attribute with default value does not have to show before regular attributeo
-> - You might place dataclass configration directly in class inheritance
-> - configs will be passed to subclasses
+- Note here that attribute with default value does not have to show before regular attributeo
+- You might place dataclass configration directly in class inheritance
+- configs will be passed to subclasses
+
+- config class meta by passing class arguments or defining `__model_config__` field in the class
 
 ## 2. Usage of FrozenStruct
 
@@ -99,7 +103,7 @@ baozi.MutableFieldError
 
 baozi receive config in following order:
 
-1. config defined explicitly using /_/_model_config/_/_ field defined in the class
+1. config defined explicitly using `__model_config__` field defined in the class
 2. config defined in the inheritance params
 3. config defined in the parent class of current class
 4. default config of baozi, which goes like this:

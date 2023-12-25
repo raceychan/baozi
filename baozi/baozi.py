@@ -81,8 +81,8 @@ def get_dc_params(dataclass):
     return params
 
 
-class MetaConfig(ty.TypedDict, total=False):
-    init: ty.NotRequired[bool]  # = True
+class MetaConfig(ty.TypedDict):
+    init: ty.Required[bool]  # = True
     repr: ty.NotRequired[bool]  # = True
     eq: ty.NotRequired[bool]  # = True
     order: ty.NotRequired[bool]  # = False
