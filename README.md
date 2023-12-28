@@ -26,7 +26,7 @@ dataclass alternative with a greater emphasis on the 'class' aspect.
 - Inheritance
 - Immutability
 - Keyword-only arguments and random order attributes
-- Support user-defined `__pre_init__` method that gets executed before class instantiation
+- Support user-defined `__pre_init__` method that gets executed before object instantiation
 - Typecasting(experimental)
 
 ## Installation
