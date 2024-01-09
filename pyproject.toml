@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "baozi"
-version = "0.1.0"
+version = "0.0.6"
 description = ""
 authors = ["race <raceychan@gmail.com>"]
 license = "MIT"
@@ -12,6 +12,8 @@ python = "^3.11"
 
 [tool.poetry.group.dev.dependencies]
 pytest-cov = "^4.1.0"
+pydantic = "^2.5.3"
+twine = "^4.0.2"
 
 [build-system]
 requires = ["poetry-core"]

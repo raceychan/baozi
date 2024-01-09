@@ -6,6 +6,7 @@ from .baozi import FrozenStruct as FrozenStruct
 from .baozi import MetaConfig as MetaConfig
 from .baozi import Struct as Struct
 from .baozi import pretty_repr as pretty_repr
+from .baozi import field as field
 from .baozi import read_attributes as read_attributes
 from .baozi import read_slots as read_slots
 from .error import InvalidTypeError as InvalidTypeError

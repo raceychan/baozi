@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from time import perf_counter
 
 from pydantic import BaseModel
-
 from baozi import FrozenStruct, Struct
 
 
@@ -28,7 +27,6 @@ class Timer:
 def timer(floor: float = 0, precision: int = 3):
     with Timer(floor=floor, precision=precision) as t:
         yield t
-    t.show()
 
 
 TRIALS = 10**6

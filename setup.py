@@ -1,13 +1,14 @@
 import pathlib
+import codecs
 
 from setuptools import find_packages, setup
 
 PROJECT_NAME = "baozi"
 PROJECT_ROOT = pathlib.Path.cwd()
 URL = "https://github.com/raceychan/baozi"
-VERSION = "0.0.4"
+VERSION = "0.0.5"
+DESCRIPTION = "dataclass alternative with a greater emphasis on the 'class' aspect."
 
-import codecs
 
 with codecs.open(str(PROJECT_ROOT / "README.md"), encoding="utf-8") as fh:
     long_description = "\n" + fh.read()
@@ -20,6 +21,7 @@ setup(
     packages=find_packages(
         where="baozi", exclude=["tests", "*.tests", "*.tests.*", "tests.*"]
     ),
+    description=DESCRIPTION,
     long_description_content_type="text/markdown",
     long_description=long_description,
     author="race",

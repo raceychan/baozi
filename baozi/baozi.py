@@ -4,6 +4,7 @@ import typing as ty
 from dataclasses import MISSING as MISSING
 from dataclasses import _process_class as _process_class  # type: ignore
 from dataclasses import asdict, is_dataclass
+from dataclasses import field as field
 from types import MethodType as MethodType
 
 from .error import ArgumentError, InvalidTypeError, MutableFieldError
@@ -95,7 +96,7 @@ class MetaConfig(ty.TypedDict):
     flyweight: ty.NotRequired[bool]  # = False
 
 
-BAOZI_META_TYPE = (ty.ClassVar[MetaConfig],)
+BAOZI_META_TYPE: tuple[type] = (MetaConfig,)
 
 
 @ty.dataclass_transform(kw_only_default=True)
