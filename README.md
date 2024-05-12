@@ -19,7 +19,7 @@
 
 ## Introduction
 
-dataclass alternative with a greater emphasis on the 'class' aspect.
+'baozi' is a dataclass alternative with a greater emphasis on the 'class' aspect.
 
 ## Extract features baozi offers
 
@@ -146,13 +146,13 @@ slots=True
 
 ### why wouldn't I just use dataclass?
 
-Mostly because of **the decorator** approach, dataclass uses decorators for transforming a regular class into a dataclass, and when I use dataclass in production, I soon realize that:
+Mostly because of the **decorator** approach python builtin dataclass takes, dataclass uses decorators for transforming a regular class into a dataclass, and this would lead to:
 
 1. Code repetition, when there are tons of dataclasses, you are going to decorate them with `@dataclass` over and over again
 
 2. Error-prone, for non-trivial application, you often have different configuration of dataclass, like `@dataclass(frozen)`, if you inherit from a frozen dataclass and you use regular `@dataclass` decorator, odds are you are going to have a bad time.
 
-3. It simply does not make sense to use decorator, when you decorating a class, it implies that your class would work just fine without the decorator, and that is not the case, if you get rid of the `@dataclass` decorator, your class won't work.
+3. It simply does not make sense to use decorator, when you decorating a class, it implies that your class would still work without the decorator, and that is not the case, if you get rid of the `@dataclass` decorator, your class won't work.
 
 ### why wouldn't I just use pydantic.BaseModel?
 
