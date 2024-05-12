@@ -81,7 +81,7 @@ from baozi import FrozenStruct
 assert is_dataclass(FrozenStruct)
 ```
 
-### FrozenStruct is equal to dataclass(frozen=True, slots=True, kw_only=True)
+### FrozenStruct is a more powerful alternative to dataclass(frozen=True, slots=True, kw_only=True)
 
 ```python
 from baozi import FrozenStruct, field
